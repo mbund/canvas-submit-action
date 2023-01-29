@@ -7,7 +7,9 @@ import fetch from 'node-fetch'
 async function run(): Promise<void> {
   try {
     const token = core.getInput('token', {required: true})
-    const courseId = z.number().parse(core.getInput('course', {required: true}))
+    const courseId = z
+      .number({invalid_type_error: 'Course ID must be a number'})
+      .parse(core.getInput('course', {required: true}))
     // const assignment = z
     //   .number()
     //   .parse(core.getInput('assignment', {required: true}))

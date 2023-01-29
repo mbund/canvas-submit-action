@@ -50,7 +50,9 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('token', { required: true });
-            const courseId = zod_1.z.number().parse(core.getInput('course', { required: true }));
+            const courseId = zod_1.z
+                .number({ invalid_type_error: 'Course ID must be a number' })
+                .parse(core.getInput('course', { required: true }));
             // const assignment = z
             //   .number()
             //   .parse(core.getInput('assignment', {required: true}))
