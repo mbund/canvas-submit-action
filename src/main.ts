@@ -34,7 +34,7 @@ async function run(): Promise<void> {
       }
     })
     const courses = courseSchema.parse(await response.json())
-    core.info(`Found ${courses}`)
+    core.info(`Found ${JSON.stringify(courses)}`)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }
