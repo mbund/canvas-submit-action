@@ -2,9 +2,9 @@ name: 'Canvas submit action'
 description: 'Submit assignments to Canvas LMS by Instructure'
 author: 'Mark Bundschuh'
 inputs:
-  domain:
+  url:
     required: true
-    description: 'Canvas LMS domain i.e. your.instructure.com'
+    description: 'Canvas LMS url i.e. https://your.instructure.com'
   token:
     required: true
     description: 'Generated Canvas LMS access token'

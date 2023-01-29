@@ -6,10 +6,10 @@ import fs from 'fs'
 async function run(): Promise<void> {
   try {
     const token = core.getInput('token', {required: true})
-    const domain = z
+    const url = z
       .string()
       .url()
-      .parse(core.getInput('domain', {required: true}))
+      .parse(core.getInput('url', {required: true}))
     const filepath = core.getInput('file', {required: true})
     const filestat = fs.statSync(filepath)
     if (!filestat.isFile()) throw new Error(`File ${filepath} is not a file`)
@@ -18,7 +18,7 @@ async function run(): Promise<void> {
       bytes: fs.readFileSync(filepath).toString('binary')
     }
 
-    core.info(`Uploading ${file.size} bytes to ${domain}`)
+    core.info(`Uploading ${file.size} bytes to ${url}`)
 
     // Enumerate all courses
     const courseSchema = z.array(

@@ -49,10 +49,10 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('token', { required: true });
-            const domain = zod_1.z
+            const url = zod_1.z
                 .string()
                 .url()
-                .parse(core.getInput('domain', { required: true }));
+                .parse(core.getInput('url', { required: true }));
             const filepath = core.getInput('file', { required: true });
             const filestat = fs_1.default.statSync(filepath);
             if (!filestat.isFile())
@@ -61,7 +61,7 @@ function run() {
                 size: filestat.size,
                 bytes: fs_1.default.readFileSync(filepath).toString('binary')
             };
-            core.info(`Uploading ${file.size} bytes to ${domain}`);
+            core.info(`Uploading ${file.size} bytes to ${url}`);
             // Enumerate all courses
             const courseSchema = zod_1.z.array(zod_1.z.object({
                 id: zod_1.z.number(),

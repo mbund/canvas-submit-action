@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./
         with:
-          domain: ${{ secrets.TEST_DOMAIN }}
+          url: ${{ secrets.TEST_URL }}
           token: ${{ secrets.TEST_TOKEN }}
           file: upload-test.pdf
           course: ${{ secrets.TEST_COURSE }}
