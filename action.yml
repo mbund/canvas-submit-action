@@ -1,11 +1,22 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Canvas submit action'
+description: 'Submit assignments to Canvas LMS by Instructure'
+author: 'Mark Bundschuh'
 inputs:
-  milliseconds: # change this
+  domain:
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+    description: 'Canvas LMS domain i.e. your.instructure.com'
+  token:
+    required: true
+    description: 'Generated Canvas LMS access token'
+  file:
+    required: true
+    description: 'Local file to upload'
+  course:
+    required: true
+    description: 'Course id'
+  assignment:
+    required: true
+    description: 'Assignment id'
 runs:
   using: 'node16'
   main: 'dist/index.js'

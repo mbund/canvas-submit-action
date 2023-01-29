@@ -1,16 +1,42 @@
 import * as core from '@actions/core'
-import {wait} from './wait'
+
+import {z} from 'zod'
+import fs from 'fs'
 
 async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_STEP_DEBUG` to true
+    const token = core.getInput('token', {required: true})
+    const domain = z
+      .string()
+      .url()
+      .parse(core.getInput('domain', {required: true}))
+    const filepath = core.getInput('file', {required: true})
+    const filestat = fs.statSync(filepath)
+    if (!filestat.isFile()) throw new Error(`File ${filepath} is not a file`)
+    const file = {
+      size: filestat.size,
+      bytes: fs.readFileSync(filepath).toString('binary')
+    }
 
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    core.info(`Uploading ${file.size} bytes to ${domain}`)
 
-    core.setOutput('time', new Date().toTimeString())
+    // Enumerate all courses
+    const courseSchema = z.array(
+      z.object({
+        id: z.number(),
+        name: z.string()
+      })
+    )
+    const courses = courseSchema.parse(
+      (
+        await fetch('https://osu.instructure.com/api/v1/courses', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+      ).json()
+    )
+    core.info(`Found ${courses}`)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }
