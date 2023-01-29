@@ -28,15 +28,12 @@ async function run(): Promise<void> {
         name: z.string()
       })
     )
-    const courses = courseSchema.parse(
-      (
-        await fetch('https://osu.instructure.com/api/v1/courses', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        })
-      ).json()
-    )
+    const response = await fetch(`${url}/api/v1/courses`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    const courses = courseSchema.parse(await response.json())
     core.info(`Found ${courses}`)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)

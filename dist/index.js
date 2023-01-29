@@ -68,11 +68,12 @@ function run() {
                 id: zod_1.z.number(),
                 name: zod_1.z.string()
             }));
-            const courses = courseSchema.parse((yield (0, node_fetch_1.default)('https://osu.instructure.com/api/v1/courses', {
+            const response = yield (0, node_fetch_1.default)(`${url}/api/v1/courses`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            })).json());
+            });
+            const courses = courseSchema.parse(yield response.json());
             core.info(`Found ${courses}`);
         }
         catch (error) {
