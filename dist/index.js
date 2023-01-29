@@ -51,7 +51,9 @@ function run() {
         try {
             const token = core.getInput('token', { required: true });
             const courseId = zod_1.z
-                .number({ invalid_type_error: 'Course ID must be a number' })
+                .number({ invalid_type_error: 'Course ID must be a number', coerce: true })
+                .nonnegative()
+                .int()
                 .parse(core.getInput('course', { required: true }));
             // const assignment = z
             //   .number()
