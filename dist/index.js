@@ -50,6 +50,10 @@ function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('token', { required: true });
+            const courseId = zod_1.z.number().parse(core.getInput('course', { required: true }));
+            // const assignment = z
+            //   .number()
+            //   .parse(core.getInput('assignment', {required: true}))
             const url = zod_1.z
                 .string()
                 .url()
@@ -74,7 +78,11 @@ function run() {
                 }
             });
             const courses = courseSchema.parse(yield response.json());
-            core.info(`Found ${courses}`);
+            // Check given course exists
+            const course = courses.find(x => x.id === courseId);
+            if (course === undefined)
+                throw new Error(`Could not find course with id ${courseId}`);
+            core.info(`Found course with id ${course.id}: ${course.name}`);
         }
         catch (error) {
             if (error instanceof Error)

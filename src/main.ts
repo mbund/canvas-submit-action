@@ -7,6 +7,10 @@ import fetch from 'node-fetch'
 async function run(): Promise<void> {
   try {
     const token = core.getInput('token', {required: true})
+    const courseId = z.number().parse(core.getInput('course', {required: true}))
+    // const assignment = z
+    //   .number()
+    //   .parse(core.getInput('assignment', {required: true}))
     const url = z
       .string()
       .url()
@@ -34,7 +38,13 @@ async function run(): Promise<void> {
       }
     })
     const courses = courseSchema.parse(await response.json())
-    core.info(`Found ${JSON.stringify(courses)}`)
+
+    // Check given course exists
+    const course = courses.find(x => x.id === courseId)
+    if (course === undefined)
+      throw new Error(`Could not find course with id ${courseId}`)
+
+    core.info(`Found course with id ${course.id}: ${course.name}`)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }
