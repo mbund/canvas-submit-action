@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 
 import {z} from 'zod'
 import fs from 'fs'
+import fetch from 'node-fetch'
 
 async function run(): Promise<void> {
   try {
