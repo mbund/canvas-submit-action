@@ -4,6 +4,7 @@ import {z} from 'zod';
 import fs from 'fs';
 import fetch, {FormData, fileFromSync} from 'node-fetch';
 import glob from 'glob';
+import {basename} from 'path';
 
 type State = {
   token: string;
@@ -13,17 +14,14 @@ type State = {
 };
 
 const uploadFile = async (state: State, path: string) => {
-  const filestat = fs.statSync(path);
-  if (!filestat.isFile()) throw new Error(`File ${path} is not a file`);
-  const file = {
-    size: filestat.size,
-    bytes: fileFromSync(path)
-  };
+  if (!fs.statSync(path).isFile())
+    throw new Error(`File ${path} is not a file`);
+  const file = fileFromSync(path);
 
   core.info(`Uploading ${path}: ${file.size} bytes to ${state.url}`);
 
   const uploadBucketForm = new FormData();
-  uploadBucketForm.append('name', path);
+  uploadBucketForm.append('name', basename(path));
   uploadBucketForm.append('size', file.size.toString());
   const uploadBucket = z
     .object({
@@ -49,7 +47,7 @@ const uploadFile = async (state: State, path: string) => {
   const uploadForm = new FormData();
   for (const key in uploadBucket.upload_params)
     uploadForm.append(key, uploadBucket.upload_params[key]);
-  uploadForm.append('file', file.bytes);
+  uploadForm.append('file', file);
   const location = z.string().parse(
     (
       await fetch(uploadBucket.upload_url, {

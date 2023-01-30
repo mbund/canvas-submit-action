@@ -47,17 +47,14 @@ const zod_1 = __nccwpck_require__(3301);
 const fs_1 = __importDefault(__nccwpck_require__(7147));
 const node_fetch_1 = __importStar(__nccwpck_require__(4429));
 const glob_1 = __importDefault(__nccwpck_require__(1957));
+const path_1 = __nccwpck_require__(1017);
 const uploadFile = (state, path) => __awaiter(void 0, void 0, void 0, function* () {
-    const filestat = fs_1.default.statSync(path);
-    if (!filestat.isFile())
+    if (!fs_1.default.statSync(path).isFile())
         throw new Error(`File ${path} is not a file`);
-    const file = {
-        size: filestat.size,
-        bytes: (0, node_fetch_1.fileFromSync)(path)
-    };
+    const file = (0, node_fetch_1.fileFromSync)(path);
     core.info(`Uploading ${path}: ${file.size} bytes to ${state.url}`);
     const uploadBucketForm = new node_fetch_1.FormData();
-    uploadBucketForm.append('name', path);
+    uploadBucketForm.append('name', (0, path_1.basename)(path));
     uploadBucketForm.append('size', file.size.toString());
     const uploadBucket = zod_1.z
         .object({
@@ -75,7 +72,7 @@ const uploadFile = (state, path) => __awaiter(void 0, void 0, void 0, function* 
     const uploadForm = new node_fetch_1.FormData();
     for (const key in uploadBucket.upload_params)
         uploadForm.append(key, uploadBucket.upload_params[key]);
-    uploadForm.append('file', file.bytes);
+    uploadForm.append('file', file);
     const location = zod_1.z.string().parse((yield (0, node_fetch_1.default)(uploadBucket.upload_url, {
         method: 'POST',
         body: uploadForm

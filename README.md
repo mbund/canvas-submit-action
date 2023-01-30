@@ -47,6 +47,7 @@ jobs:
 
       - name: Submit to Canvas
         uses: mbund/canvas-submit-action@v1
+        if: contains(github.event.head_commit.message, 'submit:') # optional but maybe recommended
         with:
           url: ${{ secrets.CANVAS_URL }}
           token: ${{ secrets.CANVAS_TOKEN }}
