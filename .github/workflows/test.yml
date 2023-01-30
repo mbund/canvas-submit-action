@@ -23,6 +23,6 @@ jobs:
         with:
           url: ${{ secrets.TEST_URL }}
           token: ${{ secrets.TEST_TOKEN }}
-          file: upload-test.pdf
+          file: upload-test*
           course: ${{ secrets.TEST_COURSE }}
           assignment: ${{ secrets.TEST_ASSIGNMENT }}

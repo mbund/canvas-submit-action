@@ -10,7 +10,7 @@ inputs:
     description: 'Generated Canvas LMS access token'
   file:
     required: true
-    description: 'Local file to upload'
+    description: 'Local file(s) to upload, supports globbing'
   course:
     required: true
     description: 'Course id'
