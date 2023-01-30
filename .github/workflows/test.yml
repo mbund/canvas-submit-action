@@ -23,4 +23,4 @@ jobs:
         with:
           url: ${{ secrets.TEST_URL }}
           token: ${{ secrets.TEST_TOKEN }}
-          file: upload-test*
+          file: upload-test.pdf
