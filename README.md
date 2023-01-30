@@ -45,7 +45,8 @@ jobs:
       - name: Make
         run: make
 
-      - uses: ./
+      - name: Submit to Canvas
+        uses: mbund/canvas-submit-action@v1
         with:
           url: ${{ secrets.CANVAS_URL }}
           token: ${{ secrets.CANVAS_TOKEN }}
