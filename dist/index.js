@@ -45,7 +45,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(2186));
 const zod_1 = __nccwpck_require__(3301);
 const fs_1 = __importDefault(__nccwpck_require__(5747));
-const node_fetch_1 = __importDefault(__nccwpck_require__(6882));
+const node_fetch_1 = __importStar(__nccwpck_require__(6882));
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -55,38 +55,87 @@ function run() {
                 .nonnegative()
                 .int()
                 .parse(core.getInput('course', { required: true }));
-            // const assignment = z
-            //   .number()
-            //   .parse(core.getInput('assignment', {required: true}))
+            const assignmentId = zod_1.z
+                .number({
+                invalid_type_error: 'Assignment ID must be a number',
+                coerce: true
+            })
+                .nonnegative()
+                .int()
+                .parse(core.getInput('assignment', { required: true }));
             const url = zod_1.z
                 .string()
                 .url()
                 .parse(core.getInput('url', { required: true }));
             const filepath = core.getInput('file', { required: true });
+            core.info(`uploading file ${filepath}`);
             const filestat = fs_1.default.statSync(filepath);
             if (!filestat.isFile())
                 throw new Error(`File ${filepath} is not a file`);
             const file = {
                 size: filestat.size,
-                bytes: fs_1.default.readFileSync(filepath).toString('binary')
+                bytes: (0, node_fetch_1.fileFromSync)(filepath)
             };
             core.info(`Uploading ${file.size} bytes to ${url}`);
             // Enumerate all courses
-            const courseSchema = zod_1.z.array(zod_1.z.object({
+            const courses = zod_1.z
+                .array(zod_1.z.object({
                 id: zod_1.z.number(),
                 name: zod_1.z.string()
-            }));
-            const response = yield (0, node_fetch_1.default)(`${url}/api/v1/courses`, {
+            }))
+                .parse(yield (yield (0, node_fetch_1.default)(`${url}/api/v1/courses`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
-            });
-            const courses = courseSchema.parse(yield response.json());
+            })).json());
             // Check given course exists
             const course = courses.find(x => x.id === courseId);
             if (course === undefined)
                 throw new Error(`Could not find course with id ${courseId}`);
-            core.info(`Found course with id ${course.id}: ${course.name}`);
+            core.info(`Found course with id ${courseId}`);
+            // TODO: Ensure assignment exists
+            const uploadBucketForm = new node_fetch_1.FormData();
+            uploadBucketForm.append('name', filepath);
+            uploadBucketForm.append('size', file.size.toString());
+            const uploadBucket = zod_1.z
+                .object({
+                upload_url: zod_1.z.string().url(),
+                upload_params: zod_1.z.any()
+            })
+                .parse(yield (yield (0, node_fetch_1.default)(`${url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions/self/files`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+                method: 'POST',
+                body: uploadBucketForm
+            })).json());
+            core.info(`Recieved upload bucket`);
+            const uploadForm = new node_fetch_1.FormData();
+            for (const key in uploadBucket.upload_params)
+                uploadForm.append(key, uploadBucket.upload_params[key]);
+            uploadForm.append('file', file.bytes);
+            const location = zod_1.z.string().parse((yield (0, node_fetch_1.default)(uploadBucket.upload_url, {
+                method: 'POST',
+                body: uploadForm
+            })).headers.get('Location'));
+            core.info(`Recieved upload location`);
+            // Check if upload succeeded
+            const uploadResponse = zod_1.z
+                .object({
+                id: zod_1.z.number(),
+                url: zod_1.z.string().url(),
+                content_type: zod_1.z.string().optional(),
+                display_name: zod_1.z.string().optional(),
+                size: zod_1.z.number().optional()
+            })
+                .parse(yield (yield (0, node_fetch_1.default)(location, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Length': '0'
+                },
+                method: 'POST'
+            })).json());
+            core.info(`Uploaded file as ${uploadResponse.display_name} with size ${uploadResponse.size}`);
         }
         catch (error) {
             if (error instanceof Error)
