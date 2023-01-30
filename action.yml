@@ -1,6 +1,9 @@
 name: 'Canvas submit action'
 description: 'Submit assignments to Canvas LMS by Instructure'
 author: 'Mark Bundschuh'
+branding:
+  icon: book
+  color: red
 inputs:
   url:
     required: true
