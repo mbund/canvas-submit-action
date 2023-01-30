@@ -55,7 +55,7 @@ const uploadFile = (state, path) => __awaiter(void 0, void 0, void 0, function* 
         size: filestat.size,
         bytes: (0, node_fetch_1.fileFromSync)(path)
     };
-    core.info(`Uploading ${file.size} bytes to ${state.url}`);
+    core.info(`Uploading ${path}: ${file.size} bytes to ${state.url}`);
     const uploadBucketForm = new node_fetch_1.FormData();
     uploadBucketForm.append('name', path);
     uploadBucketForm.append('size', file.size.toString());
@@ -71,7 +71,7 @@ const uploadFile = (state, path) => __awaiter(void 0, void 0, void 0, function* 
         method: 'POST',
         body: uploadBucketForm
     })).json());
-    core.info(`Recieved upload bucket`);
+    core.info(`Uploading ${path}: recieved upload bucket, sending file payload`);
     const uploadForm = new node_fetch_1.FormData();
     for (const key in uploadBucket.upload_params)
         uploadForm.append(key, uploadBucket.upload_params[key]);
@@ -80,7 +80,7 @@ const uploadFile = (state, path) => __awaiter(void 0, void 0, void 0, function* 
         method: 'POST',
         body: uploadForm
     })).headers.get('Location'));
-    core.info(`Recieved upload location`);
+    core.info(`Uploading ${path}: recieved upload location`);
     // Check if upload succeeded
     const uploadResponse = zod_1.z
         .object({
@@ -97,60 +97,70 @@ const uploadFile = (state, path) => __awaiter(void 0, void 0, void 0, function* 
         },
         method: 'POST'
     })).json());
-    core.info(`Uploaded file as ${uploadResponse.display_name} with size ${uploadResponse.size}`);
+    core.info(`Uploading ${path}: successfully uploaded file as ${uploadResponse.display_name} with size ${uploadResponse.size}`);
     return uploadResponse;
 });
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const token = core.getInput('token', { required: true });
-            const courseId = zod_1.z
-                .number({ invalid_type_error: 'Course ID must be a number', coerce: true })
-                .nonnegative()
-                .int()
-                .parse(core.getInput('course', { required: true }));
-            const assignmentId = zod_1.z
-                .number({
-                invalid_type_error: 'Assignment ID must be a number',
-                coerce: true
-            })
-                .nonnegative()
-                .int()
-                .parse(core.getInput('assignment', { required: true }));
-            const url = zod_1.z
+            const file_pattern = core.getInput('file', { required: true });
+            // Parse URL to find course and assignment IDs
+            const inputURL = zod_1.z
                 .string()
                 .url()
                 .parse(core.getInput('url', { required: true }));
-            const file_pattern = core.getInput('file', { required: true });
+            const paths = {};
+            const unparsedURL = new URL(inputURL);
+            const routes = unparsedURL.pathname.split('/').slice(1);
+            for (let i = 0; i < routes.length; i += 2)
+                paths[routes[i]] = routes[i + 1];
+            const parsedIds = zod_1.z
+                .object({
+                courses: zod_1.z
+                    .number({
+                    invalid_type_error: 'Course ID must be a number',
+                    coerce: true
+                })
+                    .nonnegative()
+                    .int(),
+                assignments: zod_1.z
+                    .number({
+                    invalid_type_error: 'Assignment ID must be a number',
+                    coerce: true
+                })
+                    .nonnegative()
+                    .int()
+            })
+                .parse(paths);
+            const state = {
+                token,
+                url: unparsedURL.origin,
+                courseId: parsedIds.courses,
+                assignmentId: parsedIds.assignments
+            };
             // Enumerate all courses
             const courses = zod_1.z
                 .array(zod_1.z.object({
                 id: zod_1.z.number(),
                 name: zod_1.z.string()
             }))
-                .parse(yield (yield (0, node_fetch_1.default)(`${url}/api/v1/courses`, {
+                .parse(yield (yield (0, node_fetch_1.default)(`${state.url}/api/v1/courses`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             })).json());
             // Check given course exists
-            const course = courses.find(x => x.id === courseId);
+            const course = courses.find(x => x.id === state.courseId);
             if (course === undefined)
-                throw new Error(`Could not find course with id ${courseId}`);
-            core.info(`Found course with id ${courseId}`);
+                throw new Error(`Could not find course with id ${state.courseId}`);
+            core.info(`Found course with id ${state.courseId}`);
             // TODO: Check given assignment exists
             // Upload all files
-            core.info(`uploading file(s) ${file_pattern}`);
-            const uploads = yield Promise.all(glob_1.default.sync(file_pattern).map((x) => __awaiter(this, void 0, void 0, function* () {
-                return yield uploadFile({
-                    token,
-                    url,
-                    courseId,
-                    assignmentId
-                }, x);
-            })));
+            core.info(`Uploading file(s) ${file_pattern}`);
+            const uploads = yield Promise.all(glob_1.default.sync(file_pattern).map((x) => __awaiter(this, void 0, void 0, function* () { return yield uploadFile(state, x); })));
             // Submit file(s) to assignment
-            const submitURL = new URL(`${url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions`);
+            const submitURL = new URL(`${state.url}/api/v1/courses/${state.courseId}/assignments/${state.assignmentId}/submissions`);
             submitURL.searchParams.append('submission[submission_type]', 'online_upload');
             for (const upload of uploads) {
                 submitURL.searchParams.append('submission[file_ids][]', upload.id.toString());

@@ -4,19 +4,13 @@ author: 'Mark Bundschuh'
 inputs:
   url:
     required: true
-    description: 'Canvas LMS url i.e. https://your.instructure.com'
+    description: 'Canvas LMS url i.e. https://your.instructure.com/courses/123456/assignments/7891234'
   token:
     required: true
     description: 'Generated Canvas LMS access token'
   file:
     required: true
     description: 'Local file(s) to upload, supports globbing'
-  course:
-    required: true
-    description: 'Course id'
-  assignment:
-    required: true
-    description: 'Assignment id'
 runs:
   using: 'node16'
   main: 'dist/index.js'

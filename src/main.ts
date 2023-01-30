@@ -20,7 +20,7 @@ const uploadFile = async (state: State, path: string) => {
     bytes: fileFromSync(path)
   };
 
-  core.info(`Uploading ${file.size} bytes to ${state.url}`);
+  core.info(`Uploading ${path}: ${file.size} bytes to ${state.url}`);
 
   const uploadBucketForm = new FormData();
   uploadBucketForm.append('name', path);
@@ -44,7 +44,7 @@ const uploadFile = async (state: State, path: string) => {
         )
       ).json()
     );
-  core.info(`Recieved upload bucket`);
+  core.info(`Uploading ${path}: recieved upload bucket, sending file payload`);
 
   const uploadForm = new FormData();
   for (const key in uploadBucket.upload_params)
@@ -59,7 +59,7 @@ const uploadFile = async (state: State, path: string) => {
     ).headers.get('Location')
   );
 
-  core.info(`Recieved upload location`);
+  core.info(`Uploading ${path}: recieved upload location`);
 
   // Check if upload succeeded
   const uploadResponse = z
@@ -83,7 +83,7 @@ const uploadFile = async (state: State, path: string) => {
     );
 
   core.info(
-    `Uploaded file as ${uploadResponse.display_name} with size ${uploadResponse.size}`
+    `Uploading ${path}: successfully uploaded file as ${uploadResponse.display_name} with size ${uploadResponse.size}`
   );
 
   return uploadResponse;
@@ -92,24 +92,42 @@ const uploadFile = async (state: State, path: string) => {
 async function run(): Promise<void> {
   try {
     const token = core.getInput('token', {required: true});
-    const courseId = z
-      .number({invalid_type_error: 'Course ID must be a number', coerce: true})
-      .nonnegative()
-      .int()
-      .parse(core.getInput('course', {required: true}));
-    const assignmentId = z
-      .number({
-        invalid_type_error: 'Assignment ID must be a number',
-        coerce: true
-      })
-      .nonnegative()
-      .int()
-      .parse(core.getInput('assignment', {required: true}));
-    const url = z
+    const file_pattern = core.getInput('file', {required: true});
+
+    // Parse URL to find course and assignment IDs
+    const inputURL = z
       .string()
       .url()
       .parse(core.getInput('url', {required: true}));
-    const file_pattern = core.getInput('file', {required: true});
+    const paths: any = {};
+    const unparsedURL = new URL(inputURL);
+    const routes = unparsedURL.pathname.split('/').slice(1);
+    for (let i = 0; i < routes.length; i += 2) paths[routes[i]] = routes[i + 1];
+    const parsedIds = z
+      .object({
+        courses: z
+          .number({
+            invalid_type_error: 'Course ID must be a number',
+            coerce: true
+          })
+          .nonnegative()
+          .int(),
+        assignments: z
+          .number({
+            invalid_type_error: 'Assignment ID must be a number',
+            coerce: true
+          })
+          .nonnegative()
+          .int()
+      })
+      .parse(paths);
+
+    const state: State = {
+      token,
+      url: unparsedURL.origin,
+      courseId: parsedIds.courses,
+      assignmentId: parsedIds.assignments
+    };
 
     // Enumerate all courses
     const courses = z
@@ -121,7 +139,7 @@ async function run(): Promise<void> {
       )
       .parse(
         await (
-          await fetch(`${url}/api/v1/courses`, {
+          await fetch(`${state.url}/api/v1/courses`, {
             headers: {
               Authorization: `Bearer ${token}`
             }
@@ -130,33 +148,22 @@ async function run(): Promise<void> {
       );
 
     // Check given course exists
-    const course = courses.find(x => x.id === courseId);
+    const course = courses.find(x => x.id === state.courseId);
     if (course === undefined)
-      throw new Error(`Could not find course with id ${courseId}`);
-    core.info(`Found course with id ${courseId}`);
+      throw new Error(`Could not find course with id ${state.courseId}`);
+    core.info(`Found course with id ${state.courseId}`);
 
     // TODO: Check given assignment exists
 
     // Upload all files
-    core.info(`uploading file(s) ${file_pattern}`);
+    core.info(`Uploading file(s) ${file_pattern}`);
     const uploads = await Promise.all(
-      glob.sync(file_pattern).map(
-        async x =>
-          await uploadFile(
-            {
-              token,
-              url,
-              courseId,
-              assignmentId
-            },
-            x
-          )
-      )
+      glob.sync(file_pattern).map(async x => await uploadFile(state, x))
     );
 
     // Submit file(s) to assignment
     const submitURL = new URL(
-      `${url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions`
+      `${state.url}/api/v1/courses/${state.courseId}/assignments/${state.assignmentId}/submissions`
     );
     submitURL.searchParams.append(
       'submission[submission_type]',
