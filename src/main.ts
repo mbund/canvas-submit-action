@@ -124,6 +124,27 @@ async function run(): Promise<void> {
     core.info(
       `Uploaded file as ${uploadResponse.display_name} with size ${uploadResponse.size}`
     )
+
+    // Submit file to assignment
+    const submitURL = new URL(
+      `${url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions`
+    )
+    submitURL.searchParams.append(
+      'submission[submission_type]',
+      'online_upload'
+    )
+    submitURL.searchParams.append(
+      'submission[file_ids][]',
+      uploadResponse.id.toString()
+    )
+    const submitResponse = await fetch(submitURL.toString(), {
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      method: 'POST'
+    })
+
+    core.info(`Submitted file to assignment ${JSON.stringify(submitResponse)}`)
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }
