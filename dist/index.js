@@ -143,18 +143,18 @@ function run() {
             core.info(`uploading file(s) ${file_pattern}`);
             const uploads = yield Promise.all(glob_1.default.sync(file_pattern).map((x) => __awaiter(this, void 0, void 0, function* () {
                 return yield uploadFile({
-                    token: token,
-                    url: url,
-                    courseId: courseId,
-                    assignmentId: assignmentId
+                    token,
+                    url,
+                    courseId,
+                    assignmentId
                 }, x);
             })));
             // Submit file(s) to assignment
             const submitURL = new URL(`${url}/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions`);
             submitURL.searchParams.append('submission[submission_type]', 'online_upload');
-            uploads.forEach(upload => {
+            for (const upload of uploads) {
                 submitURL.searchParams.append('submission[file_ids][]', upload.id.toString());
-            });
+            }
             const submitResponse = yield (0, node_fetch_1.default)(submitURL.toString(), {
                 headers: {
                     Authorization: `Bearer ${token}`

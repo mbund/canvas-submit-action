@@ -144,10 +144,10 @@ async function run(): Promise<void> {
         async x =>
           await uploadFile(
             {
-              token: token,
-              url: url,
-              courseId: courseId,
-              assignmentId: assignmentId
+              token,
+              url,
+              courseId,
+              assignmentId
             },
             x
           )
@@ -162,12 +162,12 @@ async function run(): Promise<void> {
       'submission[submission_type]',
       'online_upload'
     );
-    uploads.forEach(upload => {
+    for (const upload of uploads) {
       submitURL.searchParams.append(
         'submission[file_ids][]',
         upload.id.toString()
       );
-    });
+    }
 
     const submitResponse = await fetch(submitURL.toString(), {
       headers: {

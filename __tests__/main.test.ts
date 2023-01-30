@@ -1,3 +1,3 @@
-import {test} from '@jest/globals'
+import {test} from '@jest/globals';
 
-test('test runs', async () => {})
+test('test runs', async () => {});
