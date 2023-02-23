@@ -127,32 +127,6 @@ async function run(): Promise<void> {
       assignmentId: parsedIds.assignments
     };
 
-    // Enumerate all courses
-    const courses = z
-      .array(
-        z.object({
-          id: z.number(),
-          name: z.string()
-        })
-      )
-      .parse(
-        await (
-          await fetch(`${state.url}/api/v1/courses`, {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          })
-        ).json()
-      );
-
-    // Check given course exists
-    const course = courses.find(x => x.id === state.courseId);
-    if (course === undefined)
-      throw new Error(`Could not find course with id ${state.courseId}`);
-    core.info(`Found course with id ${state.courseId}`);
-
-    // TODO: Check given assignment exists
-
     // Upload all files
     core.info(`Uploading file(s) ${file_pattern}`);
     const uploads = await Promise.all(

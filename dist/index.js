@@ -136,23 +136,6 @@ function run() {
                 courseId: parsedIds.courses,
                 assignmentId: parsedIds.assignments
             };
-            // Enumerate all courses
-            const courses = zod_1.z
-                .array(zod_1.z.object({
-                id: zod_1.z.number(),
-                name: zod_1.z.string()
-            }))
-                .parse(yield (yield (0, node_fetch_1.default)(`${state.url}/api/v1/courses`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            })).json());
-            // Check given course exists
-            const course = courses.find(x => x.id === state.courseId);
-            if (course === undefined)
-                throw new Error(`Could not find course with id ${state.courseId}`);
-            core.info(`Found course with id ${state.courseId}`);
-            // TODO: Check given assignment exists
             // Upload all files
             core.info(`Uploading file(s) ${file_pattern}`);
             const uploads = yield Promise.all(glob_1.default.sync(file_pattern).map((x) => __awaiter(this, void 0, void 0, function* () { return yield uploadFile(state, x); })));
